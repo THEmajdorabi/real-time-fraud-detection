@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sentinel: Fraud Operations</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #070a0f;
+      --panel: #0e141d;
+      --line: #1f2b39;
+      --muted: #8797aa;
+      --text: #eef5ff;
+      --cyan: #36e1d1;
+      --amber: #ffba4a;
+      --red: #ff5c6c;
+      --green: #6ee7a8;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background:
+        radial-gradient(circle at 20% -10%, #17364d 0, transparent 36%),
+        radial-gradient(circle at 100% 0, #2b173c 0, transparent 30%),
+        var(--bg);
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      min-height: 100vh;
+    }
+    .shell { max-width: 1440px; margin: 0 auto; padding: 28px; }
+    header { display: flex; justify-content: space-between; gap: 24px; align-items: center; margin-bottom: 24px; }
+    .brand { display: flex; align-items: center; gap: 14px; }
+    .mark {
+      width: 46px; height: 46px; border-radius: 14px; display: grid; place-items: center;
+      background: linear-gradient(145deg, #39ead8, #417fff); color: #05111a; font-weight: 900;
+      box-shadow: 0 0 36px #36e1d133;
+    }
+    h1 { margin: 0; font-size: 21px; letter-spacing: .02em; }
+    .subtitle { color: var(--muted); font-size: 13px; margin-top: 4px; }
+    .actions { display: flex; gap: 10px; flex-wrap: wrap; }
+    button {
+      border: 1px solid var(--line); color: var(--text); background: #121b27; padding: 10px 14px;
+      border-radius: 10px; cursor: pointer; font-weight: 700; transition: .16s ease;
+    }
+    button:hover { transform: translateY(-1px); border-color: #3d5268; }
+    button.primary { background: var(--cyan); color: #041411; border-color: transparent; }
+    button.danger { background: #361a22; color: #ffabb5; border-color: #713441; }
+    .status { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); }
+    .dot { width: 8px; height: 8px; border-radius: 999px; background: var(--green); box-shadow: 0 0 10px var(--green); }
+    .cards { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; margin-bottom: 14px; }
+    .card, .panel { background: #0e141de8; border: 1px solid var(--line); border-radius: 16px; }
+    .card { padding: 18px; min-height: 112px; position: relative; overflow: hidden; }
+    .card::after { content: ""; position: absolute; width: 80px; height: 80px; right: -24px; top: -28px; border-radius: 50%; background: #36e1d10a; }
+    .label { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .12em; }
+    .value { font-size: 30px; font-weight: 800; margin-top: 12px; font-variant-numeric: tabular-nums; }
+    .unit { font-size: 12px; color: var(--muted); margin-left: 4px; font-weight: 500; }
+    .grid { display: grid; grid-template-columns: minmax(0, 2fr) minmax(310px, .75fr); gap: 14px; }
+    .panel { overflow: hidden; }
+    .panel-head { padding: 17px 18px; border-bottom: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .panel-title { font-weight: 800; font-size: 14px; }
+    .table-wrap { overflow-x: auto; max-height: 590px; }
+    table { width: 100%; border-collapse: collapse; min-width: 850px; }
+    th, td { padding: 12px 14px; text-align: left; border-bottom: 1px solid #182330; font-size: 12px; }
+    th { color: var(--muted); text-transform: uppercase; letter-spacing: .08em; font-size: 10px; position: sticky; top: 0; background: #101720; z-index: 1; }
+    td { font-variant-numeric: tabular-nums; }
+    tr.flash { animation: flash 1.2s ease; }
+    @keyframes flash { 0% { background: #36e1d124; } 100% { background: transparent; } }
+    .badge { display: inline-flex; padding: 5px 8px; border-radius: 999px; font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: .07em; }
+    .approve { color: var(--green); background: #163327; }
+    .review { color: var(--amber); background: #382b14; }
+    .block { color: var(--red); background: #3b1820; }
+    .riskbar { width: 84px; height: 6px; background: #202c39; border-radius: 99px; display: inline-block; overflow: hidden; vertical-align: middle; margin-right: 7px; }
+    .riskbar > span { display: block; height: 100%; background: linear-gradient(90deg, var(--green), var(--amber), var(--red)); }
+    .side { padding: 18px; }
+    .meter { margin: 20px 0; }
+    .meter-top { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 8px; }
+    .track { height: 9px; border-radius: 999px; overflow: hidden; background: #1a2633; }
+    .fill { height: 100%; border-radius: 999px; transition: width .3s ease; }
+    .fill.green { background: var(--green); }
+    .fill.amber { background: var(--amber); }
+    .fill.red { background: var(--red); }
+    .divider { height: 1px; background: var(--line); margin: 22px 0; }
+    .model-note { color: var(--muted); font-size: 12px; line-height: 1.6; }
+    .warning { color: #f1c979; background: #312711; border: 1px solid #66501b; padding: 12px; border-radius: 10px; margin-top: 14px; }
+    .empty { color: var(--muted); text-align: center; padding: 50px; }
+    @media (max-width: 1000px) {
+      .cards { grid-template-columns: repeat(2, 1fr); }
+      .grid { grid-template-columns: 1fr; }
+      header { align-items: flex-start; flex-direction: column; }
+    }
+    @media (max-width: 560px) { .shell { padding: 16px; } .cards { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header>
+      <div class="brand">
+        <div class="mark">S</div>
+        <div>
+          <h1>Sentinel Fraud Operations</h1>
+          <div class="subtitle"><span class="status"><span class="dot"></span>Model online</span> · Real-time risk scoring</div>
+        </div>
+      </div>
+      <div class="actions">
+        <button id="normal">Simulate normal</button>
+        <button id="suspicious" class="danger">Simulate suspicious</button>
+        <button id="auto" class="primary">Start live traffic</button>
+      </div>
+    </header>
+
+    <section class="cards">
+      <article class="card"><div class="label">Transactions scored</div><div class="value" id="scored">0</div></article>
+      <article class="card"><div class="label">Approved</div><div class="value" id="approved">0</div></article>
+      <article class="card"><div class="label">Manual review</div><div class="value" id="reviewed">0</div></article>
+      <article class="card"><div class="label">Blocked</div><div class="value" id="blocked">0</div></article>
+      <article class="card"><div class="label">Average risk</div><div class="value"><span id="average">0.0</span><span class="unit">%</span></div></article>
+    </section>
+
+    <section class="grid">
+      <article class="panel">
+        <div class="panel-head"><span class="panel-title">Live transaction feed</span><span class="status" id="refresh-status">Waiting for traffic</span></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Transaction</th><th>Amount</th><th>Risk</th><th>Decision</th><th>Main signal</th><th>Latency</th></tr></thead>
+            <tbody id="transactions"><tr><td colspan="6" class="empty">Simulate a transaction to begin.</td></tr></tbody>
+          </table>
+        </div>
+      </article>
+
+      <aside class="panel side">
+        <div class="panel-title">Decision distribution</div>
+        <div class="meter"><div class="meter-top"><span>Approved</span><span id="approve-pct">0%</span></div><div class="track"><div class="fill green" id="approve-bar"></div></div></div>
+        <div class="meter"><div class="meter-top"><span>Review</span><span id="review-pct">0%</span></div><div class="track"><div class="fill amber" id="review-bar"></div></div></div>
+        <div class="meter"><div class="meter-top"><span>Blocked</span><span id="block-pct">0%</span></div><div class="track"><div class="fill red" id="block-bar"></div></div></div>
+        <div class="divider"></div>
+        <div class="panel-title">Data drift</div>
+        <div class="value" style="font-size: 25px" id="drift-status">Waiting</div>
+        <p class="model-note" id="drift-copy">At least 50 live transactions are required before PSI is reported.</p>
+        <div class="divider"></div>
+        <div class="panel-title">Model provenance</div>
+        <p class="model-note" id="model-version">Loading model metadata…</p>
+        <div class="warning">Demonstration model trained on deterministic synthetic data, not real bank transactions.</div>
+      </aside>
+    </section>
+  </main>
+
+  <script>
+    const $ = id => document.getElementById(id);
+    let autoTimer = null;
+
+    const money = value => new Intl.NumberFormat('en-US', {style: 'currency', currency: 'USD'}).format(value);
+    const pct = value => `${(value * 100).toFixed(1)}%`;
+
+    async function simulate(suspicious = false) {
+      $('refresh-status').textContent = 'Scoring…';
+      await fetch(`/api/simulate?suspicious=${suspicious}`, {method: 'POST'});
+      await refresh();
+    }
+
+    function bars(stats) {
+      const total = Math.max(stats.scored, 1);
+      for (const [key, id] of [['approve','approve'], ['review','review'], ['block','block']]) {
+        const value = stats.decisions[key] / total * 100;
+        $(`${id}-pct`).textContent = `${value.toFixed(1)}%`;
+        $(`${id}-bar`).style.width = `${value}%`;
+      }
+    }
+
+    function renderRows(items) {
+      if (!items.length) return;
+      $('transactions').innerHTML = items.map((txn, index) => {
+        const reason = txn.reasons?.[0]?.label || 'low aggregate risk';
+        return `<tr class="${index === 0 ? 'flash' : ''}">
+          <td>${txn.transaction_id}</td>
+          <td>${money(txn.amount)}</td>
+          <td><span class="riskbar"><span style="width:${txn.fraud_probability * 100}%"></span></span>${pct(txn.fraud_probability)}</td>
+          <td><span class="badge ${txn.decision}">${txn.decision}</span></td>
+          <td>${reason}</td>
+          <td>${txn.latency_ms.toFixed(2)} ms</td>
+        </tr>`;
+      }).join('');
+    }
+
+    function renderDrift(drift) {
+      if (drift.status === 'insufficient_data') {
+        $('drift-status').textContent = `${drift.rows} / ${drift.minimum_rows}`;
+        $('drift-copy').textContent = 'Live samples collected before drift analysis begins.';
+        return;
+      }
+      $('drift-status').textContent = drift.status.toUpperCase();
+      $('drift-status').style.color = drift.status === 'stable' ? 'var(--green)' : drift.status === 'warning' ? 'var(--amber)' : 'var(--red)';
+      $('drift-copy').textContent = `Maximum Population Stability Index: ${drift.max_psi}. Alert threshold: 0.25.`;
+    }
+
+    async function refresh() {
+      const [stats, recent] = await Promise.all([
+        fetch('/api/stats').then(r => r.json()),
+        fetch('/api/recent?limit=60').then(r => r.json())
+      ]);
+      $('scored').textContent = stats.scored;
+      $('approved').textContent = stats.decisions.approve;
+      $('reviewed').textContent = stats.decisions.review;
+      $('blocked').textContent = stats.decisions.block;
+      $('average').textContent = (stats.average_probability * 100).toFixed(1);
+      bars(stats);
+      renderRows(recent.transactions);
+      renderDrift(stats.drift);
+      $('refresh-status').textContent = `Updated ${new Date().toLocaleTimeString()}`;
+    }
+
+    $('normal').onclick = () => simulate(false);
+    $('suspicious').onclick = () => simulate(true);
+    $('auto').onclick = () => {
+      if (autoTimer) {
+        clearInterval(autoTimer); autoTimer = null; $('auto').textContent = 'Start live traffic';
+      } else {
+        autoTimer = setInterval(() => simulate(Math.random() < .18), 850);
+        $('auto').textContent = 'Stop live traffic';
+      }
+    };
+
+    fetch('/api/model').then(r => r.json()).then(model => {
+      $('model-version').innerHTML = `<strong>${model.model_version}</strong><br>Logistic regression · ${model.features.length} features<br>Test PR-AUC: ${model.test.pr_auc.toFixed(3)} · Recall: ${model.test.recall.toFixed(3)}`;
+    });
+    refresh();
+    setInterval(refresh, 3000);
+  </script>
+</body>
+</html>

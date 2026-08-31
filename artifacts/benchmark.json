@@ -1,0 +1,8 @@
+{
+  "requests": 5000,
+  "p50_ms": 0.9513,
+  "p95_ms": 1.1871,
+  "p99_ms": 1.4709,
+  "model_only_requests_per_second": 1008.5,
+  "note": "In-process model timing; HTTP and network latency are intentionally excluded."
+}
